@@ -4,7 +4,10 @@ print(torch.cuda.is_available())
 
 #########
 # place for  merge!
-
+# this will be the second Tutorial
+# some random comment
+z = torch.Tensor(1,1)
+print(z)
 
 #########
 
