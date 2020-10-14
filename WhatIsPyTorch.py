@@ -3,10 +3,11 @@ from __future__ import print_function
 import torch
 print(torch.cuda.is_available())
 # tensor 1x4 bedeuted: 1 Reihe, 4 Spalten (1 row 4 columns)
+# tensor 1x4 beispiel: [[x x x x]]
 
 
 def partOne():
-    x = torch.empty(5, 3)
+    x = torch.empty(1, 4)
     print(x)
 
     y = torch.rand(5, 3)
@@ -114,10 +115,11 @@ def partFour():
         y = torch.ones_like(x, device=device)
         x = x.to(device)
         z = x + y
-        print("this is z: " + str(z))
+        print("this is z (x + y): " + str(z))
         print("z to cpu and change dtype: " + str(z.to("cpu", torch.double)))
 
 
-partFour()
+# partFour()
+partOne()
 
 # Tutorial - What is PyTorch end
