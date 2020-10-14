@@ -1,4 +1,4 @@
-# first Tutorial - What is PyTorch
+# first Tutorial - What is PyTorch: https://pytorch.org/tutorials/beginner/blitz/tensor_tutorial.html#sphx-glr-beginner-blitz-tensor-tutorial-py
 from __future__ import print_function
 import torch
 print(torch.cuda.is_available())
