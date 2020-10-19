@@ -1,228 +1,242 @@
 # unsing the Neural Network from NeuralNetworksTut für MNIST Classification
-
 from __future__ import print_function
-import torch
 
-# Data Loading and normalizing using torchvision
-import torchvision
-import torchvision.transforms as transforms
-# use torch.nn for neural networks and torch.nn.functional for functions!
-import torch.nn as nn
-import torch.nn.functional as F
-# import torch optim for optimizer
-import torch.optim as optim
-# Path to save and load model
-PATH = './MNIST_n.pth'
+if __name__ == "__main__":
+    import torch
 
-
-## If running on Windows and you get a BrokenPipeError, try setting
-# the num_worker of torch.utils.data.DataLoader() to 0.
-transform = transforms.transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.1307, ), (0.3081, ))],
-)
-
-#transform = transforms.ToTensor()
-
-trainset = torchvision.datasets.MNIST(root='./data', train=True,
-                                      download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                          shuffle=True, num_workers=0)
-
-testset = torchvision.datasets.MNIST(root='./data', train=True,
-                                      download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                          shuffle=False, num_workers=0)
+    # Data Loading and normalizing using torchvision
+    import torchvision
+    import torchvision.transforms as transforms
+    # use torch.nn for neural networks and torch.nn.functional for functions!
+    import torch.nn as nn
+    import torch.nn.functional as F
+    # import torch optim for optimizer
+    import torch.optim as optim
+    # Path to save and load model
+    PATH = './MNIST_n.pth'
 
 
-classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
-               '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
+    ## If running on Windows and you get a BrokenPipeError, try setting
+    # the num_worker of torch.utils.data.DataLoader() to 0.
+    transform = transforms.transforms.Compose(
+        [transforms.ToTensor(),
+         transforms.Normalize((0.1307, ), (0.3081, ))],
+    )
+
+    #transform = transforms.ToTensor()
+
+    trainset = torchvision.datasets.MNIST(root='./data', train=True,
+                                          download=True, transform=transform)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
+                                              shuffle=True, num_workers=2)
+
+    testset = torchvision.datasets.MNIST(root='./data', train=True,
+                                          download=True, transform=transform)
+    testloader = torch.utils.data.DataLoader(trainset, batch_size=64,
+                                              shuffle=False, num_workers=2)
 
 
-import matplotlib.pyplot as plt
-import numpy as np
-def imshow(img):
-    npimg = img.numpy()
-    plt.imshow(npimg[0], cmap="gray")
-    plt.show()
-
-def showexample(imgages):
-    # show images for fun!!
-    # print lables before show picture otherwise the programm will not contunue
-    print("Example labels:", "".join("%5s," % classes[labels[j]] for j in range(10)))
-    # make a grid with utils!
-    imshow(torchvision.utils.make_grid(images))
-
-# get some random training images
-dataiter = iter(trainloader)
-images, labels = dataiter.next()
-
-# showexample(images)
-print()
+    classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
+                   '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
 
 
-# lets define a network: (always as class!)
-class Net(nn.Module):
-    # always need the init with super!
-    def __init__(self):
-        super(Net, self).__init__()
-        # kernel
-        # 1 input image channel, 6 output channels, 3x3 square convolution (3 is the filter which typically is 3 or 5)
-        self.conv1 = nn.Conv2d(1, 6, 3)
-        # first of conv2 has to be last of conv1!
-        self.conv2 = nn.Conv2d(6, 16, 3)
-        # an affine operation: y = Wx + b
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)   # image dimension is: 5x5
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+    import matplotlib.pyplot as plt
+    import numpy as np
 
-    def forward(self, x):
-        # max pooling over a (2, 2) window
-        # print(x.size(), "this is the size!!!!!")
-        # x = self.conv1(x)
-        # print(x.size(), "this is the size!!!!!")
-        # x = F.relu(x)
-        # print(x.size(), "this is the size!!!!!")
-        # x = F.max_pool2d(x, 2)
-        # print(x.size(), "this is the size!!!!!")
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
-        # print(x.size())
-        # if the size is a square you can only specify a single number
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        # get size for linear layer
-        # print(" ", x.size())
-        # exit()
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+    def imshow(img):
+        npimg = img.numpy()
+        plt.imshow(npimg[0], cmap="gray")
+        plt.show()
 
+    def showexample(imgages):
+        # show images for fun!!
+        # print lables before show picture otherwise the programm will not contunue
+        print("Example labels:", "".join("%5s," % classes[labels[j]] for j in range(10)))
+        # make a grid with utils!
+        imshow(torchvision.utils.make_grid(images))
 
-cuda_true = input("Use GPU? (y) or (n)?")
-if cuda_true == "y":
-    device = "cuda"
-else:
-    device = "cpu"
-print("Device:", device)
-net = Net()
-load = input("Load Network? (y) or (n)?")
-if load == "y":
-    net.load_state_dict(torch.load(PATH))
-else:
-    pass
+    # get some random training images
+    dataiter = iter(trainloader)
+    images, labels = dataiter.next()
 
-net.to(device=device)
+    # showexample(images)
+    print()
 
-print(net)
+    # lets define a network: (always as class!)
+    class Net(nn.Module):
+        # always need the init with super!
+        def __init__(self):
+            super(Net, self).__init__()
+            # kernel
+            # 1 input image channel, 6 output channels, 3x3 square convolution (3 is the filter which typically is 3 or 5)
+            self.conv1 = nn.Conv2d(1, 6, 3)
+            # first of conv2 has to be last of conv1!
+            self.conv2 = nn.Conv2d(6, 16, 3)
+            # an affine operation: y = Wx + b
+            self.fc1 = nn.Linear(16 * 5 * 5, 120)   # image dimension is: 5x5
+            self.fc2 = nn.Linear(120, 84)
+            self.fc3 = nn.Linear(84, 10)
 
-
-# define a loss function and optimizer
-# TODO: which criterion to use when? which optimizer (SGD, ...); what is momentum?
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.8)
+        def forward(self, x):
+            # max pooling over a (2, 2) window
+            # print(x.size(), "this is the size!!!!!")
+            # x = self.conv1(x)
+            # print(x.size(), "this is the size!!!!!")
+            # x = F.relu(x)
+            # print(x.size(), "this is the size!!!!!")
+            # x = F.max_pool2d(x, 2)
+            # print(x.size(), "this is the size!!!!!")
+            x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+            # print(x.size())
+            # if the size is a square you can only specify a single number
+            x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+            # get size for linear layer
+            # print(" ", x.size())
+            # exit()
+            x = x.view(-1, 16 * 5 * 5)
+            x = F.relu(self.fc1(x))
+            x = F.relu(self.fc2(x))
+            x = self.fc3(x)
+            return x
 
 
-# train the network
-# This is when things start to get interesting. We simply have to loop over our data iterator
-# and feed the inputs to the network and optimize.
-def train_network(epochs: int):
-    for epoch in range(epochs):
-        running_loss = 0.0
-        for i, data in enumerate(trainloader, 0):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs, labels = data[0].to(device), data[1].to(device)
+    cuda_true = input("Use GPU? (y) or (n)?")
+    if cuda_true == "y":
+        device = "cuda"
+    else:
+        device = "cpu"
+    print("Device:", device)
+    net = Net()
 
-            # zero the parameter gradients
-            optimizer.zero_grad()
+    load = input("Load Network? (y) or (n)?")
+    if load == "y":
+        net.load_state_dict(torch.load(PATH))
+    else:
+        pass
 
-            # forward + backward + optimize
-            #net.to(device)
-            outputs = net(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            # print stats
-            running_loss += loss.item()
-            if i % 100 == 99:             # print every 2000 mini-batches
-                print("[%d, %d] loss: %.5f" %
-                      (epoch + 1, i + 1, running_loss / 100))
-                running_loss = 0.0
+    net.to(device=device)
+    print(net)
 
 
-    print("Training Finished!")
+    # define a loss function and optimizer
+    # TODO: when to use which criterion? which optimizer (SGD, ...); what is momentum?
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.8)
 
 
-# execute training!
-train_true = input("Train network? (y) or (n)?")
-if train_true == "y":
-    train_network(20)
-else:
-    pass
+    # train the network
+    # This is when things start to get interesting. We simply have to loop over our data iterator
+    # and feed the inputs to the network and optimize.
+    def train_network(epochs: int):
+        for epoch in range(epochs):
+            running_loss = 0.0
+            for i, data in enumerate(trainloader, 0):
+                # get the inputs; data is a list of [inputs, labels]
+                inputs, labels = data[0].to(device), data[1].to(device)
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                # forward + backward + optimize
+                outputs = net(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
+
+                # print stats
+                running_loss += loss.item()
+                if i % 100 == 99:             # print every 100 mini-batches
+                    print("[%d, %d] loss: %.5f" %
+                          (epoch + 1, i + 1, running_loss / 100))
+                    running_loss = 0.0
 
 
-# save the network?
-save = input("Save net? (y) or (n)?")
-if save == "y":
-    torch.save(net.state_dict(), PATH)
-else:
-    pass
+        print("Training Finished!")
 
 
-# test the network on test data
-def test(d: device, images, labels, testnum: int = 0):
-    print(d)
-    if testnum == 1:
-        # print difference groundtruth to predicted
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for data in testloader:
-                images, labels = data[0].to(d), data[1].to(d)
-                #net.to(d)
-                outputs = net(images.to(d))
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+    # execute training!
+    train_true = input("Train network? (y) or (n)?")
+    if train_true == "y":
+        train_network(3)
 
-        print('Accuracy of the network on the test images: %5f %%' % (
-            100 * correct / total))
-
-    elif testnum == 2:
-        class_correct = list(0. for i in range(10))
-        class_total = list(0. for i in range(10))
-        with torch.no_grad():
-            for data in testloader:
-                images, labels = data[0].to(d), data[1].to(d)
-                #net.to(d)
-                outputs = net(images.to(d))
-                _, predicted = torch.max(outputs, 1)
-                c = (predicted == labels).squeeze()
-                for i in range(10):
-                    label = labels[i]
-                    class_correct[label] += c[i].item()
-                    class_total[label] += 1
-
-        for i in range(10):
-            print('Accuracy of %5s : %2d %%' % (
-                classes[i], 100 * class_correct[i] / class_total[i]))
+        # save the network?
+        save = input("Save net? (y) or (n)?")
+        if save == "y":
+            torch.save(net.state_dict(), PATH)
+        else:
+            pass
 
     else:
-        # print images
-        print("Groundtruth: ", " ".join("%5s," % classes[labels[j]] for j in range(64)))
-        imshow(torchvision.utils.make_grid(images))
+        pass
 
-        net.load_state_dict(torch.load(PATH))
-        outputs = net(images.to(d))
+    # test the network on test data
+    def test(images, labels, testnum: int = 0):
+        if testnum == 1:
+            # print difference groundtruth to predicted
+            correct = 0
+            total = 0
+            with torch.no_grad():
+                for data in testloader:
+                    images, labels = data[0].to(device), data[1].to(device)
+                    # images, labels = data[0], data[1]
+                    outputs = net(images)
+                    _, predicted = torch.max(outputs.data, 1)
+                    total += labels.size(0)
+                    correct += (predicted == labels).sum().item()
 
-        _, predicted = torch.max(outputs, 1)
-        print("Predicted: ", " ".join("%5s," % classes[predicted[j]] for j in range(64)))
-        imshow(torchvision.utils.make_grid(images))
+            print('Accuracy of the network on the test images: %5f %%' % (
+                100 * correct / total))
+
+        elif testnum == 2:
+            class_correct = list(0. for i in range(10))
+            class_total = list(0. for i in range(10))
+            with torch.no_grad():
+                for data in testloader:
+                    images, labels = data[0].to(device), data[1].to(device)
+                    outputs = net(images)
+                    _, predicted = torch.max(outputs, 1)
+                    c = (predicted == labels).squeeze()
+                    for i in range(10):
+                        label = labels[i]
+                        class_correct[label] += c[i].item()
+                        class_total[label] += 1
+
+            for i in range(10):
+                print('Accuracy of %5s : %2d %%' % (
+                    classes[i], 100 * class_correct[i] / class_total[i]))
+
+        else:
+            # print images
+            print("Groundtruth: ", " ".join("%5s," % classes[labels[j]] for j in range(64)))
+            # imshow(torchvision.utils.make_grid(images))
+
+            net.load_state_dict(torch.load(PATH))
+            outputs = net(images)
+
+            _, predicted = torch.max(outputs, 1)
+            print("Predicted: ", " ".join("%5s," % classes[predicted[j]] for j in range(64)))
+            # imshow(torchvision.utils.make_grid(images))
 
 
-test(device, images, labels, 1)
+    # test(images, labels, 1)
+    # test(images, labels, 2)
 
-# TODO: IGNORE TODOs
-# TODO: interactivity (but more optional as time waste!!!)
-# TODO: make test one big function (time waste as well!!!)
+    examples = enumerate(testloader)
+    batch_idx, (example_data, example_targets) = next(examples)
+
+    fig = plt.figure()
+    with torch.no_grad():
+        output = net(example_data).to(device)
+    for j in range(20):
+        plt.subplot(5, 4, j + 1)
+        plt.tight_layout()
+        plt.imshow(example_data[j][0], cmap='gray', interpolation='none')
+        plt.title("Prediction: {}\nGround truth: {}".format(
+            output.data.max(1, keepdim=True)[1][j].item(), example_targets[j]))
+        plt.xticks([])
+        plt.yticks([])
+    plt.show()
+
+    # test(images, labels)
+
+# spike for CUDA AFTER programm is done... why??
