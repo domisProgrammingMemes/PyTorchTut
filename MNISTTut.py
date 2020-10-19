@@ -35,8 +35,8 @@ if __name__ == "__main__":
 
     testset = torchvision.datasets.MNIST(root='./data', train=True,
                                           download=True, transform=transform)
-    testloader = torch.utils.data.DataLoader(trainset, batch_size=64,
-                                              shuffle=False, num_workers=2)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=64,
+                                              shuffle=True, num_workers=2)
 
 
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
@@ -228,33 +228,34 @@ if __name__ == "__main__":
 
     # just evaluate the net
     net.eval()
-    examples = enumerate(testloader)
-    batch_idx, (example_data, example_targets) = next(examples)
+
 
     # ------------------------------------------------------------------------------
     # load in own data
     # TODO: NORMALIZATION Problem! Thats why own data does not work!
-    # y = transforms.transforms.Compose(
-    #     [transforms.Resize((28, 28)),
-    #      transforms.Grayscale(num_output_channels=1),
-    #      transforms.ToTensor(),
-    #      # transforms.Normalize(mean=0, std=1)],
-    #     ]
-    # )
-    #
-    # testim = Image.open(r"C:\Users\domi\Desktop\hand2.png")
-    # t_testim = y(testim)
+    y = transforms.transforms.Compose(
+        [transforms.Resize((28, 28)),
+         transforms.Grayscale(num_output_channels=1),
+         transforms.ToTensor(),
+         transforms.Normalize(0.5, 0.5)
+        ]
+    )
+
+    testim = Image.open(r"C:\Users\domi\Desktop\hand3.png")
+    t_testim = y(testim)
     # abc = torchvision.transforms.ToPILImage()(t_testim)
-    # plt.imshow(abc, cmap="gray")
-    # plt.show()
-    # t_testim = t_testim.unsqueeze(0).to(device)
-    # with torch.no_grad():
-    #     data = net(t_testim).to(device)
-    # print(data.data.max(1, keepdim=True)[1])
+    plt.imshow(t_testim.permute(1, 2, 0), cmap="gray")
+    plt.show()
+    t_testim = t_testim.unsqueeze(0).to(device)
+    with torch.no_grad():
+        data = net(t_testim).to(device)
+    print(data.data.max(1, keepdim=True)[1])
     # exit()
     # ------------------------------------------------------------------------------
 
     # WORKS!!
+    examples = enumerate(testloader)
+    batch_idx, (example_data, example_targets) = next(examples)
     fig = plt.figure()
     with torch.no_grad():
         net.to(device)
