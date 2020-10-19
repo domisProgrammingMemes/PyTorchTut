@@ -6,6 +6,14 @@ import torch
 # Data Loading and normalizing using torchvision
 import torchvision
 import torchvision.transforms as transforms
+# use torch.nn for neural networks and torch.nn.functional for functions!
+import torch.nn as nn
+import torch.nn.functional as F
+# import torch optim for optimizer
+import torch.optim as optim
+# Path to save and load model
+PATH = './MNIST_n.pth'
+
 
 ## If running on Windows and you get a BrokenPipeError, try setting
 # the num_worker of torch.utils.data.DataLoader() to 0.
@@ -26,33 +34,35 @@ testset = torchvision.datasets.MNIST(root='./data', train=True,
 testloader = torch.utils.data.DataLoader(trainset, batch_size=64,
                                           shuffle=False, num_workers=0)
 
-def showexample():
-    # show images for fun
-    import matplotlib.pyplot as plt
-    import numpy as np
 
-    def imshow(img):
-        npimg = img.numpy()
-        plt.imshow(npimg[0], cmap="gray")
-        plt.show()
+classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
+               '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
 
-    # get some random training images
-    dataiter = iter(trainloader)
-    images, labels = dataiter.next()
 
+import matplotlib.pyplot as plt
+import numpy as np
+def imshow(img):
+    npimg = img.numpy()
+    plt.imshow(npimg[0], cmap="gray")
+    plt.show()
+
+def showexample(imgages):
+    # show images for fun!!
     # print lables before show picture otherwise the programm will not contunue
-    print("".join("%5s" % labels))
+    print("Example labels:", "".join("%5s," % classes[labels[j]] for j in range(10)))
     # make a grid with utils!
     imshow(torchvision.utils.make_grid(images))
 
+# get some random training images
+dataiter = iter(trainloader)
+images, labels = dataiter.next()
 
-# use torch.nn for neural networks and torch.nn.functional for functions!
-import torch.nn as nn
-import torch.nn.functional as F
+# showexample(images)
+print()
+
 
 # lets define a network: (always as class!)
 class Net(nn.Module):
-
     # always need the init with super!
     def __init__(self):
         super(Net, self).__init__()
@@ -62,7 +72,7 @@ class Net(nn.Module):
         # first of conv2 has to be last of conv1!
         self.conv2 = nn.Conv2d(6, 16, 3)
         # an affine operation: y = Wx + b
-        self.fc1 = nn.Linear(16 * 6 * 6 , 120) # 6*6 from image dimension
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)   # image dimension is: 5x5
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
@@ -79,27 +89,140 @@ class Net(nn.Module):
         # print(x.size())
         # if the size is a square you can only specify a single number
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, self.num_flat_features(x))
+        # get size for linear layer
+        # print(" ", x.size())
+        # exit()
+        x = x.view(-1, 16 * 5 * 5)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
-# if torch.cuda.is_available():
-#         device = torch.device("cuda")
-#         net = Net().to(device=device)
-# else:
-#     net = Net()
-#
-# print(net)
+
+cuda_true = input("Use GPU? (y) or (n)?")
+if cuda_true == "y":
+    device = "cuda"
+else:
+    device = "cpu"
+print("Device:", device)
+net = Net()
+load = input("Load Network? (y) or (n)?")
+if load == "y":
+    net.load_state_dict(torch.load(PATH))
+else:
+    pass
+
+net.to(device=device)
+
+print(net)
+
 
 # define a loss function and optimizer
-# TODO: define a loss function and optimizer
+# TODO: which criterion to use when? which optimizer (SGD, ...); what is momentum?
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.8)
+
 
 # train the network
-# TODO: train the network
+# This is when things start to get interesting. We simply have to loop over our data iterator
+# and feed the inputs to the network and optimize.
+def train_network(epochs: int):
+    for epoch in range(epochs):
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data[0].to(device), data[1].to(device)
 
-# test the network on training data
-# TODO: test the network on training data
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-# TODO: Train on GPU
+            # forward + backward + optimize
+            #net.to(device)
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            # print stats
+            running_loss += loss.item()
+            if i % 100 == 99:             # print every 2000 mini-batches
+                print("[%d, %d] loss: %.5f" %
+                      (epoch + 1, i + 1, running_loss / 100))
+                running_loss = 0.0
+
+
+    print("Training Finished!")
+
+
+# execute training!
+train_true = input("Train network? (y) or (n)?")
+if train_true == "y":
+    train_network(20)
+else:
+    pass
+
+
+# save the network?
+save = input("Save net? (y) or (n)?")
+if save == "y":
+    torch.save(net.state_dict(), PATH)
+else:
+    pass
+
+
+# test the network on test data
+def test(d: device, images, labels, testnum: int = 0):
+    print(d)
+    if testnum == 1:
+        # print difference groundtruth to predicted
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for data in testloader:
+                images, labels = data[0].to(d), data[1].to(d)
+                #net.to(d)
+                outputs = net(images.to(d))
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        print('Accuracy of the network on the test images: %5f %%' % (
+            100 * correct / total))
+
+    elif testnum == 2:
+        class_correct = list(0. for i in range(10))
+        class_total = list(0. for i in range(10))
+        with torch.no_grad():
+            for data in testloader:
+                images, labels = data[0].to(d), data[1].to(d)
+                #net.to(d)
+                outputs = net(images.to(d))
+                _, predicted = torch.max(outputs, 1)
+                c = (predicted == labels).squeeze()
+                for i in range(10):
+                    label = labels[i]
+                    class_correct[label] += c[i].item()
+                    class_total[label] += 1
+
+        for i in range(10):
+            print('Accuracy of %5s : %2d %%' % (
+                classes[i], 100 * class_correct[i] / class_total[i]))
+
+    else:
+        # print images
+        print("Groundtruth: ", " ".join("%5s," % classes[labels[j]] for j in range(64)))
+        imshow(torchvision.utils.make_grid(images))
+
+        net.load_state_dict(torch.load(PATH))
+        outputs = net(images.to(d))
+
+        _, predicted = torch.max(outputs, 1)
+        print("Predicted: ", " ".join("%5s," % classes[predicted[j]] for j in range(64)))
+        imshow(torchvision.utils.make_grid(images))
+
+
+test(device, images, labels, 1)
+
+# TODO: IGNORE TODOs
+# TODO: interactivity (but more optional as time waste!!!)
+# TODO: make test one big function (time waste as well!!!)
