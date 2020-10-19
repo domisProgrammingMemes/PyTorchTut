@@ -231,27 +231,30 @@ if __name__ == "__main__":
     examples = enumerate(testloader)
     batch_idx, (example_data, example_targets) = next(examples)
 
+    # ------------------------------------------------------------------------------
     # load in own data
     # TODO: NORMALIZATION Problem! Thats why own data does not work!
-    y = transforms.transforms.Compose(
-        [#transforms.Resize(28),
-         transforms.Grayscale(num_output_channels=1),
-         transforms.ToTensor(),
-         # transforms.Normalize(mean=0, std=1)],
-        ]
-    )
+    # y = transforms.transforms.Compose(
+    #     [transforms.Resize((28, 28)),
+    #      transforms.Grayscale(num_output_channels=1),
+    #      transforms.ToTensor(),
+    #      # transforms.Normalize(mean=0, std=1)],
+    #     ]
+    # )
+    #
+    # testim = Image.open(r"C:\Users\domi\Desktop\hand2.png")
+    # t_testim = y(testim)
+    # abc = torchvision.transforms.ToPILImage()(t_testim)
+    # plt.imshow(abc, cmap="gray")
+    # plt.show()
+    # t_testim = t_testim.unsqueeze(0).to(device)
+    # with torch.no_grad():
+    #     data = net(t_testim).to(device)
+    # print(data.data.max(1, keepdim=True)[1])
+    # exit()
+    # ------------------------------------------------------------------------------
 
-    testim = Image.open(r"C:\Users\domi\Desktop\hand2.png")
-    t_testim = y(testim)
-    abc = torchvision.transforms.ToPILImage()(t_testim)
-    plt.imshow(abc, cmap="gray")
-    plt.show()
-    t_testim = t_testim.unsqueeze(0).to(device)
-    with torch.no_grad():
-        data = net(t_testim).to(device)
-    print(data.data.max(1, keepdim=True)[1])
-    exit()
-
+    # WORKS!!
     fig = plt.figure()
     with torch.no_grad():
         net.to(device)
