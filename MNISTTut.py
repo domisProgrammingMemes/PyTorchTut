@@ -15,13 +15,16 @@ if __name__ == "__main__":
     # Path to save and load model
     PATH = './MNIST_n.pth'
 
-
     ## If running on Windows and you get a BrokenPipeError, try setting
     # the num_worker of torch.utils.data.DataLoader() to 0.
+    # transform = transforms.transforms.Compose(
+    #     [transforms.ToTensor(),
+    #      transforms.Normalize((0.1307, ), (0.3081, ))],
+    # )
+
     transform = transforms.transforms.Compose(
         [transforms.ToTensor(),
-         transforms.Normalize((0.1307, ), (0.3081, ))],
-    )
+         transforms.Normalize(mean=0.5, std=1)])
 
     #transform = transforms.ToTensor()
 
@@ -221,11 +224,37 @@ if __name__ == "__main__":
     # test(images, labels, 1)
     # test(images, labels, 2)
 
+    from PIL import Image
+
+    # just evaluate the net
+    net.eval()
     examples = enumerate(testloader)
     batch_idx, (example_data, example_targets) = next(examples)
 
+    # load in own data
+    # TODO: NORMALIZATION Problem! Thats why own data does not work!
+    y = transforms.transforms.Compose(
+        [#transforms.Resize(28),
+         transforms.Grayscale(num_output_channels=1),
+         transforms.ToTensor(),
+         # transforms.Normalize(mean=0, std=1)],
+        ]
+    )
+
+    testim = Image.open(r"C:\Users\domi\Desktop\hand2.png")
+    t_testim = y(testim)
+    abc = torchvision.transforms.ToPILImage()(t_testim)
+    plt.imshow(abc, cmap="gray")
+    plt.show()
+    t_testim = t_testim.unsqueeze(0).to(device)
+    with torch.no_grad():
+        data = net(t_testim).to(device)
+    print(data.data.max(1, keepdim=True)[1])
+    exit()
+
     fig = plt.figure()
     with torch.no_grad():
+        net.to(device)
         output = net(example_data).to(device)
     for j in range(20):
         plt.subplot(5, 4, j + 1)
