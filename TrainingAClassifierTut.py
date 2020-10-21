@@ -44,3 +44,15 @@ transform = transforms.transforms.Compose(
     [transforms.ToTensor(),
      normalize]
 )
+
+# Start Tutorial
+# Generally use python packages that load data into a numpy array -> then convert to torch.Tensor!
+# -> for images use e.g. Pillow, OpenCV
+
+# For vision PyTorch created torchvision which has:
+# dataloaders for common datasets (MNIST, CIFAR10) and
+# datatransformers for images, viz. 'torchvision.datasets' and 'torch.utils.data.DataLoader'
+
+# This tutorial focuses on CIFAR10 which has 10 classes ('airplane', 'automobile', ...)
+# Images are of size 3x32x32, i.e. 3-channel color images of 32x32 pixel
+

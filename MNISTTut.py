@@ -87,7 +87,6 @@ if __name__ == "__main__":
 
     showexample(images)
     print()
-    exit()
 
     # lets define a network: (always as class!)
     class Net(nn.Module):
