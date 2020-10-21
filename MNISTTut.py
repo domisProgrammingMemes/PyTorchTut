@@ -12,8 +12,28 @@ if __name__ == "__main__":
     import torch.nn.functional as F
     # import torch optim for optimizer
     import torch.optim as optim
+
     # Path to save and load model
-    PATH = './MNIST_n.pth'
+    net_path = './MNIST_net.pth'
+    # Path for Data
+    data_path = './data'
+
+    # set up the divice (GPU or CPU) via input prompt
+    cuda_true = input("Use GPU? (y) or (n)?")
+    if cuda_true == "y":
+        device = "cuda"
+    else:
+        device = "cpu"
+    print("Device:", device)
+
+    # Hyperparameters
+    num_epochs = 10
+    train_batch_size = 64
+    test_batch_size = 64
+    mini_batch_size = 100
+    learning_rate = 0.001
+    momentum = 0.5
+
 
     ## If running on Windows and you get a BrokenPipeError, try setting
     # the num_worker of torch.utils.data.DataLoader() to 0.
@@ -22,33 +42,36 @@ if __name__ == "__main__":
     #      transforms.Normalize((0.1307, ), (0.3081, ))],
     # )
 
+    # Normalization on the pictures
+    normalize = transforms.Normalize(mean=0.5, std=1)
+
     transform = transforms.transforms.Compose(
         [transforms.ToTensor(),
-         transforms.Normalize(mean=0.5, std=1)])
+         normalize]
+    )
 
     #transform = transforms.ToTensor()
 
-    trainset = torchvision.datasets.MNIST(root='./data', train=True,
+    trainset = torchvision.datasets.MNIST(root=data_path, train=True,
                                           download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=train_batch_size,
                                               shuffle=True, num_workers=2)
 
-    testset = torchvision.datasets.MNIST(root='./data', train=True,
+    testset = torchvision.datasets.MNIST(root=data_path, train=True,
                                           download=True, transform=transform)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=64,
+    testloader = torch.utils.data.DataLoader(testset, batch_size=test_batch_size,
                                               shuffle=True, num_workers=2)
 
 
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
                    '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
 
-
     import matplotlib.pyplot as plt
-    import numpy as np
 
     def imshow(img):
         npimg = img.numpy()
         plt.imshow(npimg[0], cmap="gray")
+        plt.title("Example")
         plt.show()
 
     def showexample(imgages):
@@ -58,12 +81,13 @@ if __name__ == "__main__":
         # make a grid with utils!
         imshow(torchvision.utils.make_grid(images))
 
-    # get some random training images
+    # get some random training images in a batch with batch_size!
     dataiter = iter(trainloader)
     images, labels = dataiter.next()
 
-    # showexample(images)
+    showexample(images)
     print()
+    exit()
 
     # lets define a network: (always as class!)
     class Net(nn.Module):
@@ -102,18 +126,11 @@ if __name__ == "__main__":
             x = self.fc3(x)
             return x
 
-
-    cuda_true = input("Use GPU? (y) or (n)?")
-    if cuda_true == "y":
-        device = "cuda"
-    else:
-        device = "cpu"
-    print("Device:", device)
     net = Net()
 
     load = input("Load Network? (y) or (n)?")
     if load == "y":
-        net.load_state_dict(torch.load(PATH))
+        net.load_state_dict(torch.load(net_path))
     else:
         pass
 
@@ -124,7 +141,7 @@ if __name__ == "__main__":
     # define a loss function and optimizer
     # TODO: when to use which criterion? which optimizer (SGD, ...); what is momentum?
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.8)
+    optimizer = optim.SGD(net.parameters(), lr=learning_rate, momentum=momentum)
 
 
     # train the network
@@ -148,11 +165,10 @@ if __name__ == "__main__":
 
                 # print stats
                 running_loss += loss.item()
-                if i % 100 == 99:             # print every 100 mini-batches
+                if i % mini_batch_size == mini_batch_size - 1:             # print every mini-batch
                     print("[%d, %d] loss: %.5f" %
-                          (epoch + 1, i + 1, running_loss / 100))
+                          (epoch + 1, i + 1, running_loss / mini_batch_size))
                     running_loss = 0.0
-
 
         print("Training Finished!")
 
@@ -160,12 +176,12 @@ if __name__ == "__main__":
     # execute training!
     train_true = input("Train network? (y) or (n)?")
     if train_true == "y":
-        train_network(3)
+        train_network(num_epochs)
 
         # save the network?
         save = input("Save net? (y) or (n)?")
         if save == "y":
-            torch.save(net.state_dict(), PATH)
+            torch.save(net.state_dict(), net_path)
         else:
             pass
 
@@ -213,7 +229,7 @@ if __name__ == "__main__":
             print("Groundtruth: ", " ".join("%5s," % classes[labels[j]] for j in range(64)))
             # imshow(torchvision.utils.make_grid(images))
 
-            net.load_state_dict(torch.load(PATH))
+            net.load_state_dict(torch.load(net_path))
             outputs = net(images)
 
             _, predicted = torch.max(outputs, 1)
@@ -241,9 +257,7 @@ if __name__ == "__main__":
              transforms.Normalize(0.5, 0.5)
              ]
         )
-
         valdata = {}
-
         testim = Image.open(r"C:\Users\domi\Desktop\handdigits\hand3.png")
         t_testim = y(testim)
         # abc = torchvision.transforms.ToPILImage()(t_testim)
