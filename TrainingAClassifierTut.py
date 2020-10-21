@@ -47,7 +47,6 @@ transform = transforms.transforms.Compose(
 
 # ----------------------------------------------------------------------------------------------------
 
-
 if __name__ == "__main__":
     # Start Tutorial
     # Generally use python packages that load data into a numpy array -> then convert to torch.Tensor!
@@ -74,10 +73,32 @@ if __name__ == "__main__":
     # transform to Tensors of normalized range [-1, 1]
 
     trainset = datasets.CIFAR10(root=data_path, train=True, transform=transform, download=True)
-    trainloader = DataLoader(trainset, batch_size=train_batch_size, shuffle=True, num_workers=2)
+    trainloader = DataLoader(trainset, batch_size=train_batch_size, shuffle=True, num_workers=0)
 
     testset = datasets.CIFAR10(root=data_path, train=False, transform=transform, download=True)
-    testloader = DataLoader(testset, batch_size=test_batch_size, shuffle=True, num_workers=2)
+    testloader = DataLoader(testset, batch_size=test_batch_size, shuffle=True, num_workers=0)
 
     # classes from dataset (this is a tuple:https://www.w3schools.com/python/python_tuples.asp):
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
+    # show an example picture
+    def example():
+        # no step, just show pictures with pyplot and numpy
+        # functions to show an image
+        def showpicture(img):
+            img = img / 2 + 0.5                                     # unnormalize [remember: range is [-1, 1] | (e.g. pixel(14, 14) = 1 -> 1 / 2 + 0.5 = 1
+            npimg = img.numpy()                                     # transform Tensor to numpy array
+            plt.imshow(np.transpose(npimg, (1, 2, 0)))              # array is: 3x32x32 but plt.imshow() needs WidthxHightxChannel (32x32x3); that's what transpose is doing
+            plt.show()
+
+        # get some random training images
+        # dataiter = iter(trainloader)
+        # images, labels = dataiter.next()                          # split the value of dataiter into two variables!
+
+        for id, (images, labels) in enumerate(trainloader):
+            # show images
+            showpicture(images[id])
+            # print labels to console
+            print("{} ".format(classes[labels[0]]))
+            break
+

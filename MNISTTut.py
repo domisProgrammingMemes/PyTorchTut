@@ -54,12 +54,12 @@ if __name__ == "__main__":
     trainset = torchvision.datasets.MNIST(root=data_path, train=True,
                                           download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=train_batch_size,
-                                              shuffle=True, num_workers=2)
+                                              shuffle=True, num_workers=0)
 
     testset = torchvision.datasets.MNIST(root=data_path, train=True,
                                           download=True, transform=transform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=test_batch_size,
-                                              shuffle=True, num_workers=2)
+                                              shuffle=True, num_workers=0)
 
 
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
