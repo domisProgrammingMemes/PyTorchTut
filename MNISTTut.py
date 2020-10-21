@@ -30,7 +30,6 @@ if __name__ == "__main__":
     num_epochs = 10
     train_batch_size = 64
     test_batch_size = 64
-    mini_batch_size = 100
     learning_rate = 0.001
     momentum = 0.5
 
@@ -149,7 +148,7 @@ if __name__ == "__main__":
     def train_network(epochs: int):
         for epoch in range(epochs):
             running_loss = 0.0
-            for i, data in enumerate(trainloader, 0):
+            for i, data in enumerate(trainloader, 0):                           # i is equal to the batch_number (index/batch_idx)
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data[0].to(device), data[1].to(device)
 
@@ -164,9 +163,9 @@ if __name__ == "__main__":
 
                 # print stats
                 running_loss += loss.item()
-                if i % mini_batch_size == mini_batch_size - 1:             # print every mini-batch
+                if i % 100 == 100 - 1:             # print every 100 batches
                     print("[%d, %d] loss: %.5f" %
-                          (epoch + 1, i + 1, running_loss / mini_batch_size))
+                          (epoch + 1, i + 1, running_loss / 100))
                     running_loss = 0.0
 
         print("Training Finished!")

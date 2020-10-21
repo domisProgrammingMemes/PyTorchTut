@@ -11,3 +11,7 @@ if __name__ == "__main__":
     # path = "." is equal to "root" <- root is where the .py is located at
     print(os.listdir("."))
     # pathing()
+
+
+# epoch: all data from the dataset
+
