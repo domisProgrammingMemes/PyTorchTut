@@ -60,6 +60,7 @@ def partOne():
     print(b[:, 1])  # print second column
     print(b[0, :])  # print first row
 
+
 def partTwo():
     # Resizing/reshaping a tensor using torch.view
     c = torch.randn(4, 4)
@@ -120,6 +121,10 @@ def partFour():
 
 
 # partFour()
-partOne()
+# partOne()
+a = torch.empty([2, 4])
+print(a)
+print(a.size())
+print(a.view(-1))
 
 # Tutorial - What is PyTorch end
