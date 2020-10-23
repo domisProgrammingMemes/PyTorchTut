@@ -19,31 +19,32 @@ import numpy as np  # used for: calculations with matrix data
 # ----------------------------------------------------------------------------------------------------
 
 # Path to save and load model
-net_path = './CIFAR_net.pth'
+net_path = './models/CIFAR_net.pth'
 # Path for Data
 data_path = './data'
 
 # set up the divice (GPU or CPU) via input prompt
-# cuda_true = input("Use GPU? (y) or (n)?")
-# if cuda_true == "y":
-#     device = "cuda"
-# else:
-#     device = "cpu"
-# print("Device:", device)
+cuda_true = input("Use GPU? (y) or (n)?")
+if cuda_true == "y":
+    device = "cuda"
+else:
+    device = "cpu"
+print("Device:", device)
 
 # Hyperparameters
-num_epochs = 10
-train_batch_size = 64
+num_epochs = 3
+train_batch_size = 8                                            # smaller batch size might generalize better
 test_batch_size = 64
 learning_rate = 0.001
-momentum = 0.5
+momentum = 0.8
 
 # Normalization on the pictures
-normalize = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # mean and std
+normalize = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # mean and std for each channel
 transform = transforms.transforms.Compose(
     [transforms.ToTensor(),
      normalize]
 )
+
 
 # save a networks parameters for future use
 def save_network(net: nn.Module, path):
@@ -54,12 +55,13 @@ def save_network(net: nn.Module, path):
     else:
         pass
 
+
 # load an existing network's parameters and safe them into the just created net
 def load_network(net: nn.Module, path):
     # save the network?
-    save = input("Load Network? (y) or (n)?")
-    if save == "y":
-        net.load_state_dict(net.state_dict(), net_path)
+    load = input("Load Network? (y) or (n)?")
+    if load == "y":
+        net.load_state_dict(torch.load(net_path))
     else:
         pass
 
@@ -95,36 +97,39 @@ if __name__ == "__main__":
     trainloader = DataLoader(trainset, batch_size=train_batch_size, shuffle=True, num_workers=0)
 
     testset = datasets.CIFAR10(root=data_path, train=False, transform=transform, download=True)
-    testloader = DataLoader(testset, batch_size=test_batch_size, shuffle=True, num_workers=0)
+    testloader = DataLoader(testset, batch_size=test_batch_size, shuffle=True, num_workers=0, drop_last=True)
 
-    # classes from dataset (this is a tuple:https://www.w3schools.com/python/python_tuples.asp):
+    # classes from dataset (this is a tuple: https://www.w3schools.com/python/python_tuples.asp):
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
     # show an example picture
-    def example(dataloader):
+    def show_example(dataloader, testortrain: str):
         # no step, just show pictures with pyplot and numpy
         # functions to show an image
         def showpicture(img):
             img = img / 2 + 0.5                                     # unnormalize [remember: range is [-1, 1] | (e.g. pixel(14, 14) = 1 -> 1 / 2 + 0.5 = 1
             npimg = img.numpy()                                     # transform Tensor to numpy array
             plt.imshow(np.transpose(npimg, (1, 2, 0)))              # array is: 3x32x32 but plt.imshow() needs WidthxHightxChannel (32x32x3); that's what transpose is doing
+            plt.title("Examples for %s" % testortrain)
             plt.show()
 
         # get some random training images
         # dataiter = iter(trainloader)
         # images, labels = dataiter.next()                          # split the value of dataiter into two variables!
 
-        for id, (images, labels) in enumerate(dataloader):
+        for batch_idx, (images, labels) in enumerate(dataloader):
             # show 1 image
             # showpicture(images[id])
             # print 1 labels to console
             # print("{} ".format(classes[labels[0]]))
             # with showpicture(torchvision.utils.make_grid(images)) torchvision will make 1 image out of batch_size images
-            showpicture(torchvision.utils.make_grid(images))
             print(' '.join('%5s' % classes[labels[j]] for j in range(dataloader.batch_size)))
+            showpicture(torchvision.utils.make_grid(images))
+            if batch_idx >= 0:                                      # only one batch in that case
+                break
 
     # run showing an example out of traindata
-    example(trainloader)
+    # show_example(trainloader, "Trainingset")
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -132,11 +137,11 @@ if __name__ == "__main__":
     class CNN(nn.Module):
         def __init__(self):
             super(CNN, self).__init__()
-            self.conv1 = nn.Conv2d(3, 8, kernel_size=5)
-            self.conv2 = nn.Conv2d(8, 12, kernel_size=5)
+            self.conv1 = nn.Conv2d(3, 6, kernel_size=5)
+            self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
             self.pool = nn.MaxPool2d(2)
-            # for FC you first need to know what dimension the data will have --> result: 300
-            self.fc1 = nn.Linear(300, 120)
+            # for FC you first need to know what dimension the data will have --> result: 500
+            self.fc1 = nn.Linear(400, 120)
             self.fc2 = nn.Linear(120, 84)
             self.fc3 = nn.Linear(84, 10)
 
@@ -160,7 +165,8 @@ if __name__ == "__main__":
 
     # create an instance of the net -> CNN
     mynet = CNN()
-    # load_network(mynet, net_path)
+    load_network(mynet, net_path)
+    mynet = mynet.to(device=device)
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -172,44 +178,112 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------------------------------------
 
     # step 4: Train the network on the training data
-    for epoch in range(num_epochs):                                     # loop over dataset (traindata) multiple times #num_epochs
-        running_loss = 0.0
-        for batch_idx, data in enumerate(trainloader, 0):
-            # get the inputs, data is a list of [inputs, labels] and also batch id
-            inputs, labels = data
+    def train(epochs, net, crit, opti, dataloader):
+        for epoch in range(epochs):                                     # loop over dataset (traindata) multiple times #num_epochs
+            running_loss = 0.0
+            for batch_idx, data in enumerate(dataloader, 0):
+                # get the inputs, data is a list of [inputs, labels] and also batch id
+                inputs, labels = data
+                inputs = inputs.to(device=device)
+                labels = labels.to(device=device)
 
-            # zero the gradients
-            optimizer.zero_grad()
+                # zero the gradients
+                opti.zero_grad()
 
-            # forward
-            outputs = mynet(inputs)
-            loss = criterion(outputs, labels)
-            # + backward
-            loss.backward()
-            # + optimize
-            optimizer.step()
+                # forward
+                outputs = net(inputs)
+                loss = crit(outputs, labels)
+                # + backward
+                loss.backward()
+                # + optimize
+                opti.step()
 
-            # print some statistics
-            running_loss += loss.item()
-            if batch_idx % 50 == 49:                                # print every X (=50) batches
-                print("[Epoch: {}, Batch: {} - loss: {:.4f}".format(
-                    epoch + 1, batch_idx + 1, running_loss / 50)
-                )
-                running_loss = 0.0
+                # print some statistics
+                running_loss += loss.item()
 
-    # save_network(mynet, net_path)
-    print("Training finished")
+                if batch_idx % 500 == 499:                                # print every X (=500) batches
+                    print("[Epoch: {}, Batch: {} - loss: {:.4f}".format(
+                        epoch + 1, batch_idx + 1, running_loss / 500)
+                    )
+                    running_loss = 0.0
+
+        save_network(mynet, net_path)
+        print("Training finished")
+    train_true = input("Train network? (y) or (n)?")
+    if train_true == "y":
+        train(num_epochs, mynet, criterion, optimizer, trainloader)
+    else:
+        pass
 
     # ----------------------------------------------------------------------------------------------------
 
-    # TODO: step 5: Test the network on the test data
-    example(testloader)
+    # step 5: Test the network on the test data
+    # show_example(testloader, "Testset")
+
+    def test(net, dataloader):
+        num_correct = 0
+        num_samples = 0
+        net.eval()
+
+        with torch.no_grad():
+            for images, labels in dataloader:
+                images = images.to(device=device)
+                labels = labels.to(device=device)
+                outputs = net(images)
+                _, predicted = torch.max(outputs, 1)
+                # torch.max(input, dim) returns a namedtuple (values, indices) where
+                # values is the maximum value of each row of the input tensor in the given dimension dim.
+                # Indices is the index location of each maximum value found (argmax) <-- what we need
+                # as the index of the output equals a class!
+                num_samples += labels.size(0)
+                num_correct += (predicted == labels).sum().item()                                 # .item() to get a Python number from a tensor containing a single value
+                                                                                                  # .sum() computes sum of all values in the tensor
+        print("Accuracy of the network on the 10000 test images: %d %%" % (
+              100 * num_correct / num_samples))
+
+        net.train()
+
+    def test_classes(net, dataloader):
+        net.eval()
+        class_correct = list(0. for i in range(10))  # 0.0 for all values from 0 - 9 - the dot signals a float
+        class_total = list(0. for i in range(10))  # 0.0 for all values from 0 - 9
+
+        with torch.no_grad():
+            for images, labels in dataloader:
+                images = images.to(device=device)
+                labels = labels.to(device=device)
+                outputs = net(images)
+                _, predicted = torch.max(outputs, 1)
+                c = (predicted == labels).squeeze()
+
+                for i in range(train_batch_size):
+                    label = labels[i]
+                    class_correct[label] += c[
+                        i].item()  # .item() to get a Python number from a tensor containing a single value
+                    class_total[label] += 1
+
+                # this is how to do it if "drop_last" is set to false, as the last batchsize
+                # of the data might not be as big as the regular batch size!
+                # try:
+                #     for i in range(train_batch_size):
+                #         label = labels[i]
+                #         class_correct[label] += c[
+                #             i].item()  # .item() to get a Python number from a tensor containing a single value
+                #         class_total[label] += 1
+                # # exception because the last data in the trainloader might not be as big as the batchsize
+                # except:
+                #     for i in range(len(labels)):
+                #         label = labels[i]
+                #         class_correct[label] += c[
+                #             i].item()  # .item() to get a Python number from a tensor containing a single value
+                #         class_total[label] += 1
+
+        for i in range(len(classes)):
+            print("Accuracy of the class %5s:  %2d %%" % (
+                classes[i], 100 * class_correct[i] / class_total[i]))
+
+        net.train()
 
 
-    # mynet = CNN()
-    # for id, (images, labels) in enumerate(trainloader):
-    #     outputs = mynet(images)
-    #     if id == 0:
-    #         break
-
-    # TODO: GPU
+    test(mynet, testloader)
+    test_classes(mynet, testloader)

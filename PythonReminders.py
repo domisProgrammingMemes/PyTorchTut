@@ -20,3 +20,10 @@ strings = ("hey", "Domi")
 print(strings[0:2])
 lists = ["hey", "Domi"]
 print(lists[0:2])
+
+import torch
+t = torch.ones(3,2)
+print(t)
+sum = t.sum()
+print(sum)
+print(sum.item())
