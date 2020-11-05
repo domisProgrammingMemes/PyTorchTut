@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # )
 
     # Normalization on the pictures
-    normalize = transforms.Normalize(mean=0.5, std=1)
+    normalize = transforms.Normalize(mean=0.5, std=1)               # this does nothing as the tensors already are normalized this way
 
     transform = transforms.transforms.Compose(
         [transforms.ToTensor(),

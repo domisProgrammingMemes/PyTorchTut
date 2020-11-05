@@ -2,7 +2,7 @@
 from __future__ import print_function
 import torch
 print(torch.cuda.is_available())
-# tensor 1x4 bedeuted: 1 Reihe, 4 Spalten (1 row 4 columns)
+# tensor 1x4 bedeutet: 1 Reihe, 4 Spalten (1 row 4 columns)
 # tensor 1x4 beispiel: [[x x x x]]
 
 
