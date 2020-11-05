@@ -14,7 +14,7 @@ if __name__ == "__main__":
     import torch.optim as optim
 
     # Path to save and load model
-    net_path = './MNIST_net.pth'
+    net_path = './models/MNIST_net.pth'
     # Path for Data
     data_path = './data'
 
