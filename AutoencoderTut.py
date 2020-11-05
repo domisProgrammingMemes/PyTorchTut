@@ -23,8 +23,8 @@ else:
 print("Device:", device)
 
 # Hyperparameters
-num_epochs = 20
-train_batch_size = 512
+num_epochs = 40
+train_batch_size = 64
 test_batch_size = 10
 learning_rate = 0.001
 
@@ -128,7 +128,6 @@ if __name__ == "__main__":
 
     def check_reconstruction(loader: DataLoader, model):
         model.eval()
-        loader.batch_size = 10
         test_examples = None
         with torch.no_grad():
             for batch_features, _ in loader:
@@ -138,18 +137,18 @@ if __name__ == "__main__":
                 break
 
         with torch.no_grad():
-            plt.figure(figsize=(20, 4))
+            plt.figure(figsize=(15, 4))
             for index in range(test_batch_size):
                 # display original
                 ax = plt.subplot(2, test_batch_size, index + 1)
-                plt.imshow(test_examples[index].cpu.numpy().reshape(28, 28))
+                plt.imshow(test_examples[index].cpu().numpy().reshape(28, 28))
                 plt.gray()
                 ax.get_xaxis().set_visible(False)
                 ax.get_yaxis().set_visible(False)
 
                 #display recon
                 ax = plt.subplot(2, test_batch_size, index + 1 + test_batch_size)
-                plt.imshow(reconstruction[index].cpu.numpy().reshape(28, 28))
+                plt.imshow(reconstruction[index].cpu().numpy().reshape(28, 28))
                 plt.gray()
                 ax.get_xaxis().set_visible(False)
                 ax.get_yaxis().set_visible(False)
@@ -170,5 +169,4 @@ if __name__ == "__main__":
     else:
         pass
 
-    exit()
-    check_reconstruction(testloader, AE)
+    check_reconstruction(testloader, model)
