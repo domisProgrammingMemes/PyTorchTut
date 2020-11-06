@@ -332,7 +332,7 @@ def interpolate_latent_space(dataloader: DataLoader):
             img2 = img2.to(device=device)
             latent_2, _ = model.encoder(img2)
 
-            # interpolation of the two latent vectors
+            # interpolation of the two latent vectors / between 2 images from the latent space
             inter_latent = lambda1 * latent_1 + (1 - lambda1) * latent_2
 
             # reconstruct interpolated image
@@ -406,6 +406,8 @@ def show_2D_latent_space():
         show_image(torchvision.utils.make_grid(img_recon.data[:400], 20, 5))
         plt.show()
 
-
+# works
 visualize_reconstruction(trainloader)
+# works
 interpolate_latent_space(testloader)
+# TODO: sample_latent_vector and show_2D_latent_space
