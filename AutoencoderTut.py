@@ -42,7 +42,7 @@ def save_network(net: nn.Module, path):
 
 
 # load an existing network's parameters and safe them into the just created net
-def load_network(net: nn.Module, path):
+def load_network(net: nn.Module, net_path):
     # save the network?
     load = input("Load Network? (y) or (n)?")
     if load == "y":
