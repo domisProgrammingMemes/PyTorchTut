@@ -22,7 +22,7 @@ import numpy as np
 # Parameter Settings
 # 2-d latent space, parameter count in same order of magnitude
 # as in the original VAE paper (VAE paper has about 3x as many)
-latent_dims = 16
+latent_dims = 2
 Epochs = 10
 train_batch_size = 128
 test_batch_size = 128
@@ -318,7 +318,7 @@ def visualize_reconstruction(dataloader: DataLoader):
     plt.show()
 
 
-def interpolate_latent_space(lambda1, model: VAE, img1, img2, dataloader: DataLoader):
+def interpolate_latent_space(dataloader: DataLoader):
     vae.eval()
 
     def interpolation(lambda1, model: VAE, img1, img2):
@@ -338,7 +338,6 @@ def interpolate_latent_space(lambda1, model: VAE, img1, img2, dataloader: DataLo
             # reconstruct interpolated image
             inter_image = model.decoder(inter_latent)
             inter_image = inter_image.cpu()
-
             return inter_image
 
     # sort part of the test set by digit
@@ -347,24 +346,24 @@ def interpolate_latent_space(lambda1, model: VAE, img1, img2, dataloader: DataLo
         for i in range(img_batch.size(0)):
             digits[label_batch[i]].append(img_batch[i:i+1])
         if sum(len(d) for d in digits) >= 1000:
-            break;
+            break
 
     # interpolation lambdas
-    lambda_range = np.linspace(0, 1, 10)
+    lambda_range = np.linspace(0, 1, num=20)
 
-    fig, axs = plt.subplot(2, 5, figsize=(15, 6))
+    fig, axs = plt.subplots(4, 5, figsize=(15, 6))
     fig.subplots_adjust(hspace = 0.5, wspace = 0.001)
     axs = axs.ravel()
 
     for ind, l in enumerate(lambda_range):
-        inter_image = interpolation(float(1), vae, digits[7][0], digits[1][0])
+        inter_image = interpolation(float(l), vae, digits[0][0], digits[7][0])
 
         inter_image = to_img(inter_image)
 
         image = inter_image.numpy()
 
         axs[ind].imshow(image[0, 0, :, :], cmap="gray")
-        axs[ind].set_title("lambda_val=" + str(round(l, 1)))
+        axs[ind].set_title("lambda_val=" + str(round(l, 2)))
     plt.show()
 
 
@@ -409,3 +408,4 @@ def show_2D_latent_space():
 
 
 visualize_reconstruction(trainloader)
+interpolate_latent_space(testloader)
