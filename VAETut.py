@@ -22,7 +22,7 @@ import numpy as np
 # Parameter Settings
 # 2-d latent space, parameter count in same order of magnitude
 # as in the original VAE paper (VAE paper has about 3x as many)
-latent_dims = 2
+latent_dims = 16
 Epochs = 10
 train_batch_size = 128
 test_batch_size = 128
@@ -44,7 +44,10 @@ use_gpu = True
 # Path for Data
 data_path = './data'
 # Path to save and load model
-net_path = './models/VAE_net.pth'
+if latent_dims == 2:
+    net_path = './models/VAE_net.pth'
+else:
+    net_path = './models/VAE_net' + str(latent_dims) + '.pth'
 
 # set up the divice (GPU or CPU) via input prompt
 cuda_true = input("Use GPU? (y) or (n)?")
@@ -53,6 +56,7 @@ if cuda_true == "y":
 else:
     device = "cpu"
 print("Device:", device)
+
 
 # save a networks parameters for future use
 def save_network(net: nn.Module, path):
@@ -163,14 +167,16 @@ def vae_loss(recon_x, x, mu, logvar):
 
 
 vae = VAE()
-load_network(vae, net_path)
+try:
+    load_network(vae, net_path)
+except:
+    print("no network saved yet under path: %s" % str(net_path))
 vae.to(device=device)
 
 num_params = sum(p.numel() for p in vae.parameters() if p.requires_grad)
 print("Number of parameters: %d" % num_params)
 
 # Training
-
 optimizer = optim.Adam(params=vae.parameters(), lr=learning_rate, weight_decay=1e-5)
 
 train_loss_avg = []
@@ -179,7 +185,6 @@ train_loss_avg = []
 def train(num_epochs):
     # set to training mode
     vae.train()
-
     print("Training ...")
 
     for epoch in range(num_epochs):
@@ -209,35 +214,13 @@ def train(num_epochs):
         print("Epoch [%d / %d] average reconstruction loss: %f" % (epoch + 1, num_epochs, train_loss_avg[-1]))
 
 
-# execute training!
-train_true = input("Train network? (y) or (n)?")
-if train_true == "y":
-    train(Epochs)
-
-    # plot training curve
-    def plot_train_curve():
-        plt.ion()
-
-        fig = plt.figure()
-        plt.plot(train_loss_avg)
-        plt.xlabel("Epochs")
-        plt.ylabel("Loss")
-        plt.show()
-
-    # save the network?
-    save = input("Save net? (y) or (n)?")
-    if save == "y":
-        torch.save(vae.state_dict(), net_path)
-    else:
-        pass
-
-else:
-    pass
-
-
 # Evaluation
-def eval(dataloader: DataLoader):
+def evaluate_vae(dataloader: DataLoader):
     vae.eval()
+    if dataloader.dataset.train:
+        set_name = "Trainloader"
+    else:
+        set_name = "Testloader"
 
     test_loss_avg, num_batches = 0, 0
     for image_batch, _ in dataloader:
@@ -249,13 +232,44 @@ def eval(dataloader: DataLoader):
             image_batch_recon, latent_mu, latent_logvar = vae(image_batch)
 
             # reconstruction error
-            loss = vae_loss((image_batch_recon, image_batch, latent_mu, latent_logvar))
+            loss = vae_loss(image_batch_recon, image_batch, latent_mu, latent_logvar)
 
             test_loss_avg += loss.item()
             num_batches += 1
 
     test_loss_avg /= num_batches
-    print("Average reconstruction error: %f" % test_loss_avg)
+    print("Average reconstruction error for %s: %f" % (set_name, test_loss_avg))
+
+
+# execute training!
+train_true = input("Train network? (y) or (n)?")
+if train_true == "y":
+    train(Epochs)
+
+    # plot training curve
+    def plot_train_curve():
+        # plt.ion()
+
+        fig = plt.figure()
+        plt.plot(train_loss_avg)
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.show()
+
+    plot_train_curve()
+
+    evaluate_vae(trainloader)
+    evaluate_vae(testloader)
+
+    # save the network?
+    save = input("Save net? (y) or (n)?")
+    if save == "y":
+        torch.save(vae.state_dict(), net_path)
+    else:
+        pass
+
+else:
+    pass
 
 
 # image helpers
@@ -271,33 +285,37 @@ def show_image(img):
 
 
 def visualize_reconstruction(dataloader: DataLoader):
-    plt.ion()
+    # plt.ion()
     vae.eval()
 
     # This function takes as an input the images to reconstruct
     # and the name of the model with which the reconstructions
     # are performed
     def visualise_output(images, model):
-
+        f1 = plt.figure(1)
         with torch.no_grad():
             images = images.to(device=device)
             images, _, _ = model(images)
             images = images.cpu()
             images = to_img(images)
             np_imagegrid = torchvision.utils.make_grid(images[1:50], 10, 5).numpy()
-            plt.imshow(np.transpose(np_imagegrid, (1, 2, 0)))
-            plt.show()
+            f1 = plt.imshow(np.transpose(np_imagegrid, (1, 2, 0)))
+            f1 = plt.title("VAE reconstruction")
+            # plt.show()
+            return f1
 
     images, labels = iter(dataloader).next()
 
     # First visualise the original image
-    print("Original images")
+    f2 = plt.figure(2)
     show_image(torchvision.utils.make_grid(images[1:50], 10, 5))
-    plt.show()
+    plt.title("Original images")
+    # plt.show()
 
     # Reconstruct and visualize the images using vae
-    print("VAE reconstruction:")
     visualise_output(images, vae)
+
+    plt.show()
 
 
 def interpolate_latent_space(lambda1, model: VAE, img1, img2, dataloader: DataLoader):
@@ -389,3 +407,5 @@ def show_2D_latent_space():
         show_image(torchvision.utils.make_grid(img_recon.data[:400], 20, 5))
         plt.show()
 
+
+visualize_reconstruction(trainloader)
