@@ -2,8 +2,9 @@
 from __future__ import print_function
 import torch
 print(torch.cuda.is_available())
-# tensor 1x4 bedeutet: 1 Reihe, 4 Spalten (1 row 4 columns)
-# tensor 1x4 beispiel: [[x x x x]]
+# tensor 2x4 bedeutet: 2 Reihe, 4 Spalten (2 row 4 columns)
+# tensor 2x4 beispiel: [[x, x, x, x],
+#                       [x, x, x, x]]
 
 
 def partOne():
@@ -120,11 +121,34 @@ def partFour():
         print("z to cpu and change dtype: " + str(z.to("cpu", torch.double)))
 
 
-# partFour()
 # partOne()
-a = torch.empty([2, 4])
-print(a)
-print(a.size())
-print(a.view(-1))
+# partTwo()
+# partThree()
+# partFour()
+
+a = torch.ones([2, 4])
+print("a:", a)
+print("a size:", a.size())
+print("a view(1, -1):", a.view(1, -1))
+
+print()     # blank line
+
+t = torch.tensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+print("t:", t)
+print("t size:", t.size())
+# print(t[0][0][0].item())
+
+print()     # blank line
+
+e = torch.flatten(t, start_dim=1)
+print("e:", e)
+print("e size:", e.size())
+
+print()     # blank line
+
+f = t.flatten(start_dim=0, end_dim=1)
+print("f:", f)
+print("f size:", f.size())
 
 # Tutorial - What is PyTorch end
+

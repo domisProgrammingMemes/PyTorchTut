@@ -22,8 +22,8 @@ import numpy as np
 # Parameter Settings
 # 2-d latent space, parameter count in same order of magnitude
 # as in the original VAE paper (VAE paper has about 3x as many)
-latent_dims = 2
-Epochs = 10
+latent_dims = 16
+Epochs = 40
 train_batch_size = 128
 test_batch_size = 128
 capacity = 64
@@ -122,7 +122,7 @@ class Decoder(nn.Module):
         x = self.fc(x)
         x = x.view(x.size(0), capacity * 2, 7, 7)       # unflatten batch of feature vectors to a batch of multi channel feature maps
         x = F.relu(self.conv2(x))
-        x = torch.sigmoid((self.conv1(x)))              # last layer before output uis sigmoid, since we are using BCE as recon loss
+        x = torch.sigmoid((self.conv1(x)))              # last layer before output is sigmoid, since we are using BCE as recon loss
         return x
 
 
@@ -377,11 +377,12 @@ def sample_latent_vector():
         img_recon = vae.decoder(latent)
         img_recon = img_recon.cpu()
 
-        fig, ax = plt.subplot(figsize = (5, 5))
+        fig, ax = plt.subplots(figsize=(5, 5))
         show_image(torchvision.utils.make_grid(img_recon.data[:100], 10, 5))
         plt.show()
 
 
+# ignore for now more than 2D!
 def show_2D_latent_space():
     if latent_dims != 2:
         print("Latent space is bigger than 2!")
@@ -406,8 +407,11 @@ def show_2D_latent_space():
         show_image(torchvision.utils.make_grid(img_recon.data[:400], 20, 5))
         plt.show()
 
+
 # works
-visualize_reconstruction(trainloader)
+# visualize_reconstruction(trainloader)
+
 # works
-interpolate_latent_space(testloader)
-# TODO: sample_latent_vector and show_2D_latent_space
+# interpolate_latent_space(testloader)
+
+sample_latent_vector()
